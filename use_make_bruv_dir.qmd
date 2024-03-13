@@ -1,0 +1,18 @@
+---
+title: yay
+---
+
+```{r}
+source(
+  "R/make_bruv_dir.R"
+)
+```
+
+```{r}
+make_bruv_dir(
+  campaign_name = "ALD24",
+  no_sets = 4, 
+  no_per_set = 6
+)
+```
+
