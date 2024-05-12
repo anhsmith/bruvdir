@@ -16,3 +16,19 @@ make_bruv_dir(
 )
 ```
 
+```{r}
+make_bruv_dir(
+  campaign_name = "HGO24",
+  no_sets = 16, 
+  no_per_set = 6
+)
+```
+
+```{r}
+make_bruv_dir_old(
+  campaign_name = "PKM22",
+  no_sets = 10, 
+  no_per_set = 6
+)
+```
+
