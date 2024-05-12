@@ -24,6 +24,13 @@ make_bruv_dir(
 )
 ```
 
+
+```{r}
+source(
+  "R/make_bruv_dir_old.R"
+)
+```
+
 ```{r}
 make_bruv_dir_old(
   campaign_name = "PKM22",
