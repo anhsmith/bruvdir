@@ -8,6 +8,16 @@ source(
 )
 ```
 
+
+```{r}
+make_bruv_dir(
+  campaign_name = "FLD25",
+  no_sets = 44, 
+  no_per_set = 6
+)
+```
+
+
 ```{r}
 make_bruv_dir(
   campaign_name = "ALD24",
