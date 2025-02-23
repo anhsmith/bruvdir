@@ -2,12 +2,13 @@
 title: Using this code
 ---
 
+# Make folders
+
 ```{r}
 source(
   "R/make_bruv_dir.R"
 )
 ```
-
 
 ```{r}
 make_bruv_dir(
@@ -17,35 +18,16 @@ make_bruv_dir(
 )
 ```
 
-
-```{r}
-make_bruv_dir(
-  campaign_name = "ALD24",
-  no_sets = 4, 
-  no_per_set = 6
-)
-```
-
-```{r}
-make_bruv_dir(
-  campaign_name = "HGO24",
-  no_sets = 16, 
-  no_per_set = 6
-)
-```
-
+# Find empty folders
 
 ```{r}
 source(
-  "R/make_bruv_dir_old.R"
+  "R/find_empty_folders.R"
 )
 ```
 
 ```{r}
-make_bruv_dir_old(
-  campaign_name = "PKM22",
-  no_sets = 10, 
-  no_per_set = 6
-)
+root_directory <- "C:/FLD25"
+empty_folders <- find_empty_folders(root_directory)
+print(empty_folders)
 ```
-
