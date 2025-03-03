@@ -18,6 +18,15 @@ make_bruv_dir(
 )
 ```
 
+```{r}
+make_bruv_dir(
+  campaign_name = "OTA25",
+  no_sets = 16, 
+  no_per_set = 6
+)
+```
+
+
 # Find empty folders
 
 ```{r}

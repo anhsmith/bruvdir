@@ -2,12 +2,25 @@ make_bruv_dir <- function(
     campaign_name = "BRUV",
     no_sets = 4,
     no_per_set = 6,
-    unit_name = "H12"
+    unit_name = "H12",
+    general_folders = T
     ) {
 
   # make campaign folder
   dir.create(campaign_name)
 
+  # create general folders
+
+  if(general_folders) {
+    dir.create(paste0(campaign_name, "/", "1_Calibration files"))
+    dir.create(paste0(campaign_name, "/", "2_Metadata"))
+    dir.create(paste0(campaign_name, "/", "3_Measurement files_EMOB"))
+    dir.create(paste0(campaign_name, "/", "4_Database export"))
+    dir.create(paste0(campaign_name, "/", "5_Habitat screenshots"))
+    dir.create(paste0(campaign_name, "/", "6_Unidentified species"))
+    dir.create(paste0(campaign_name, "/", "7_Datasheets"))
+    dir.create(paste0(campaign_name, "/", "8_GPS data"))
+  }
 
   for( i in 1:no_sets ) {
 
