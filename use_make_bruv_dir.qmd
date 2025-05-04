@@ -12,8 +12,8 @@ source(
 
 ```{r}
 make_bruv_dir(
-  campaign_name = "FLD25",
-  no_sets = 44, 
+  campaign_name = "HGO25",
+  no_sets = 20, 
   no_per_set = 6
 )
 ```
