@@ -1,0 +1,26 @@
+---
+title: Using this code
+---
+
+```{r}
+source(
+  "R/check_bruv_files.R"
+)
+```
+
+```{r}
+campaign_name <- "FLD25"
+campaign_path <- "k:/FLD25"
+```
+
+```{r}
+check_folder_name_consistency(campaign_name, campaign_path)
+check_empty_lr_folders(campaign_name, campaign_path)
+check_duplicate_units_within_set(campaign_name, campaign_path)
+check_duplicate_sites(campaign_name, campaign_path)
+```
+
+```{r}
+run_all_QA_checks(campaign_name, campaign_path)
+```
+
