@@ -3,53 +3,37 @@ check_folder_name_consistency <- function(campaign_name, campaign_path) {
   library(stringr)
   library(dplyr)
 
-  # All *_L and *_R folders under campaign
-  lr_dirs <- dir_ls(campaign_path, recurse = TRUE, type = "directory") %>%
-    .[str_detect(path_file(.), "(_L|_R)$") & str_detect(., campaign_name)]
+  deployment_folders <- fs::dir_ls(campaign_path, type = "directory", regexp = paste0("^", campaign_name, "_S[0-9]{2}$"))
 
-  # Function to check one path
-  check_path <- function(p) {
-    # Break into parts
-    path_parts <- str_split(p, "/|\\\\")[[1]]
-    path_parts <- path_parts[nzchar(path_parts)]
+  inconsistent_folders <- list()
 
-    # Try to get the relevant levels: campaign folder / set folder / deployment folder / L|R folder
-    if (length(path_parts) < 4) return(NULL)
+  for (deployment_folder in deployment_folders) {
+    deployment_folder_name <- fs::path_file(deployment_folder)
 
-    set_folder        <- path_parts[length(path_parts) - 2]
-    deployment_folder <- path_parts[length(path_parts) - 1]
-    lr_folder         <- path_parts[length(path_parts)]
+    lr_folders <- fs::dir_ls(deployment_folder, recurse = TRUE, type = "directory",
+                             regexp = "[/_](L|R)$")
 
-    # Extract expected parts
-    set_id   <- str_extract(set_folder, paste0(campaign_name, "_S\\d{2}"))
-    rep_id   <- str_extract(deployment_folder, "R\\d{2}")
-    unit_id  <- str_extract(deployment_folder, "H\\d{2}-\\d{2}")
+    for (lr_folder in lr_folders) {
+      lr_folder_name <- fs::path_file(lr_folder)
 
-    expected_lr_prefix <- str_extract(lr_folder, paste0("S\\d{2}_R\\d{2}_H\\d{2}-\\d{2}"))
+      short_pattern <- stringr::str_match(deployment_folder_name, paste0("^", campaign_name, "_(S[0-9]{2}_R[0-9]{2}_[^_]+)_"))[,2]
 
-    # Make sure parts all exist and match
-    if (is.na(set_id) | is.na(rep_id) | is.na(unit_id) | is.na(expected_lr_prefix)) {
-      return(p)
-    }
+      full_lr_L <- paste0(deployment_folder_name, "_L")
+      full_lr_R <- paste0(deployment_folder_name, "_R")
 
-    full_expected <- paste0(set_id, "_", rep_id, "_", unit_id)
-    actual_prefix <- str_sub(lr_folder, 1, str_length(full_expected))
+      short_lr_L <- paste0(short_pattern, "_L")
+      short_lr_R <- paste0(short_pattern, "_R")
 
-    if (actual_prefix != full_expected) {
-      return(p)
-    } else {
-      return(NULL)
+      if (!(lr_folder_name %in% c(full_lr_L, full_lr_R, short_lr_L, short_lr_R))) {
+        inconsistent_folders <- c(inconsistent_folders, lr_folder)
+      }
     }
   }
 
-  # Run check across all L/R folders
-  bad_paths <- unlist(lapply(lr_dirs, check_path))
-
-  if (length(bad_paths) > 0) {
-    message("❌ Inconsistent folder names found in these L/R folders:")
-    print(bad_paths)
+  if (length(inconsistent_folders) == 0) {
+    message("\u2705 All L/R subfolder names consistent with deployment folders.")
   } else {
-    message("✅ All L/R subfolder names consistent with deployment folders.")
+    message("❌ Inconsistent folder names found in these L/R folders:\n", paste(inconsistent_folders, collapse = "\n"))
   }
 }
 
@@ -84,66 +68,94 @@ check_duplicate_units_within_set <- function(campaign_name, campaign_path) {
   library(stringr)
   library(dplyr)
 
-  deployment_dirs <- dir_ls(campaign_path, recurse = TRUE, type = "directory") %>%
-    .[str_detect(., paste0("/", campaign_name, "_S\\d{2}/", campaign_name, "_S\\d{2}_R\\d{2}_H\\d{2}-\\d{2}_.+"))]
+  # List all set folders (e.g. FLD25_S01, FLD25_S02, etc.)
+  set_folders <- fs::dir_ls(campaign_path, type = "directory",
+                            regexp = paste0("^", campaign_name, "_S[0-9]{2}$"))
 
-  df <- tibble(
-    path = deployment_dirs,
-    set = str_extract(path, paste0(campaign_name, "_S\\d{2}")),
-    unit = str_extract(path, "H\\d{2}-\\d{2}")
-  )
+  duplicates_found <- list()
 
-  dup_units <- df %>%
-    group_by(set, unit) %>%
-    filter(n() > 1) %>%
-    arrange(set, unit)
+  for (set_folder in set_folders) {
+    # Extract set folder name, e.g. "FLD25_S01"
+    set_name <- fs::path_file(set_folder)
 
-  if (nrow(dup_units) > 0) {
-    message("❌ Duplicate unit IDs found within sets:")
-    print(dup_units)
+    # List all deployment folders inside this set folder
+    deployment_folders <- fs::dir_ls(set_folder, type = "directory")
+
+    # Extract unit IDs from deployment folder names
+    # Assuming deployment folder names have the pattern: CAMPAIGN_S##_R##_UNITID_SITE
+    # Example: FLD25_S01_R01_H12-01_EA01
+    units <- stringr::str_extract(basename(deployment_folders), "(?<=_R[0-9]{2}_)[^_]+")
+
+    # Count duplicates within this set
+    unit_counts <- tibble(unit = units) %>%
+      group_by(unit) %>%
+      summarise(n = n()) %>%
+      filter(n > 1)
+
+    if (nrow(unit_counts) > 0) {
+      duplicates_found[[set_name]] <- unit_counts
+    }
+  }
+
+  if (length(duplicates_found) == 0) {
+    message("\u2705 No duplicate unit IDs found within any set.")
   } else {
-    message("✅ No duplicate unit IDs within sets.")
+    message("❌ Duplicate unit IDs found within sets:")
+    for (set_name in names(duplicates_found)) {
+      message(paste0("Set ", set_name, ":"))
+      print(duplicates_found[[set_name]])
+    }
   }
 }
+
 
 
 check_duplicate_sites <- function(campaign_name, campaign_path) {
   library(fs)
-  library(stringr)
   library(dplyr)
+  library(stringr)
+  library(purrr)
 
-  deployment_dirs <- dir_ls(campaign_path, recurse = TRUE, type = "directory") %>%
-    .[str_detect(path_file(.), paste0("^", campaign_name, "_S\\d{2}_R\\d{2}_H\\d{2}-\\d{2}_.+"))]
+  extract_site_name <- function(folder_names) {
+    known_tags <- c("FAIL", "PASS", "QC", "CHECK")
+    sapply(folder_names, function(name) {
+      parts <- unlist(strsplit(name, "_"))
+      last_part <- tail(parts, 1)
+      if (last_part %in% known_tags && length(parts) > 1) {
+        site <- parts[length(parts) - 1]
+      } else {
+        site <- last_part
+      }
+      return(site)
+    })
+  }
 
-  deployment_info <- tibble(
-    path = deployment_dirs,
-    folder = path_file(deployment_dirs),
-    site = str_extract(folder, "(?<=_)[^_]+$"),
-    opcode = folder
-  )
+  # Find all deployment folders (e.g. FLD25_S01_R01_H12-01_EA01 or similar)
+  all_deployments <- dir_ls(campaign_path, recurse = TRUE, type = "directory") %>%
+    keep(~ str_detect(basename(.x), paste0("^", campaign_name, "_S\\d+_R\\d+_H\\d+-\\d+_")))
 
-  dup_sites <- deployment_info %>%
+  # Extract just the folder names (basenames)
+  deployment_names <- basename(all_deployments)
+
+  # Extract site names ignoring trailing tags
+  sites <- extract_site_name(deployment_names)
+
+  site_counts <- tibble(site = sites) %>%
     count(site) %>%
     filter(n > 1)
 
-  if (nrow(dup_sites) > 0) {
-    message("❌ Duplicated site names found:")
-    for (s in dup_sites$site) {
-      opcodes <- deployment_info %>%
-        filter(site == s) %>%
-        pull(opcode)
-      message(paste0("Site '", s, "' occurs in deployments:"))
-      print(opcodes)
-    }
+  if (nrow(site_counts) == 0) {
+    message("\u2705 No duplicated site names found in campaign.")
+    return(invisible(NULL))
   } else {
-    message("✅ No duplicated site names found.")
+    message("❌ Duplicated site names found:")
+    for (site in site_counts$site) {
+      dup_deploys <- deployment_names[sites == site]
+      message("Site '", site, "' occurs in deployments:")
+      message(paste0("  ", dup_deploys, collapse = "\n"))
+      message()
+    }
+    return(site_counts)
   }
-}
-
-run_all_QA_checks <- function(campaign_name, campaign_path) {
-  check_folder_name_consistency(campaign_name, campaign_path)
-  check_empty_lr_folders(campaign_name, campaign_path)
-  check_duplicate_units_within_set(campaign_name, campaign_path)
-  check_duplicate_sites(campaign_name, campaign_path)
 }
 
