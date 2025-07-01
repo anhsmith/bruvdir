@@ -1,0 +1,19 @@
+---
+title: Using this code
+---
+
+```{r}
+source(
+  "R/rename_bruv_videos.R"
+)
+```
+
+```{r}
+campaign_name <- "FLD25"
+campaign_path <- "k:/FLD25"
+```
+
+```{r}
+rename_bruv_videos(campaign_name, campaign_path)
+```
+
