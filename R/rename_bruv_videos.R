@@ -1,4 +1,4 @@
-rename_bruv_videos <- function(campaign_name, campaign_path) {
+rename_bruv_videos <- function(campaign_name, campaign_path, pad0 = FALSE) {
   require(fs)
   require(stringr)
   require(purrr)
@@ -33,7 +33,13 @@ rename_bruv_videos <- function(campaign_name, campaign_path) {
         vids_to_rename <- vids[!already_renamed]
 
         if (length(vids_to_rename) > 0) {
-          new_files <- path(parent_dir, paste0(parent_name, "_", cam, str_pad(seq_along(vids_to_rename), 2, "left", "0"), ".MP4"))
+
+          if (pad0) {
+            new_files <- path(parent_dir, paste0(parent_name, "_", cam, str_pad(seq_along(vids_to_rename), 2, "left", "0"), ".MP4"))
+          } else {
+            new_files <- path(parent_dir, paste0(parent_name, "_", cam, seq_along(vids_to_rename), ".MP4"))
+          }
+
           file_move(vids_to_rename, new_files)
 
           for (i in seq_along(vids_to_rename)) {

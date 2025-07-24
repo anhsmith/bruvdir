@@ -9,8 +9,8 @@ source(
 ```
 
 ```{r}
-campaign_name <- "FLD25"
-campaign_path <- "k:/FLD25"
+campaign_name <- "BOI25"
+campaign_path <- "K:/BOI25"
 ```
 
 ```{r}
