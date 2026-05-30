@@ -9,8 +9,8 @@ source(
 ```
 
 ```{r}
-campaign_name <- "FLD25"
-campaign_path <- "f:/FLD25"
+campaign_name <- "NOR26"
+campaign_path <- "C:/BRUV/NOR26"
 ```
 
 ```{r}
@@ -21,6 +21,6 @@ check_duplicate_sites(campaign_name, campaign_path)
 ```
 
 ```{r}
-run_all_QA_checks(campaign_name, campaign_path)
+# run_all_QA_checks(campaign_name, campaign_path)
 ```
 
